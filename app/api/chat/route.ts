@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     }
 
     // Chèn system prompt làm tin nhắn đầu tiên (vai trò: system)
-    const apiMessages = [
+    const apiMessages: any[] = [
       { role: "system", content: systemPrompt },
       ...messages.map((msg: any) => ({
         role: msg.role === 'user' ? 'user' : 'assistant',
