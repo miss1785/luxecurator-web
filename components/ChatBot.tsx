@@ -128,7 +128,7 @@ export default function ChatBot() {
           {/* Messages */}
           <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 scrollbar-thin scrollbar-thumb-zinc-800">
             {messages.map((msg, idx) => (
-              <div key={idx} className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
+              <div key={idx} className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ${
                 msg.role === 'user' 
                   ? 'bg-yellow-600 text-zinc-950 rounded-br-sm self-end font-medium' 
                   : 'bg-zinc-800/80 text-zinc-200 rounded-bl-sm self-start leading-relaxed shadow-sm border border-zinc-700/50'
