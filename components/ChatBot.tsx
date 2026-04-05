@@ -45,7 +45,7 @@ export default function ChatBot() {
         let replyText = data.content;
         
         // KIỂM TRA BẮT SÓNG LEAD_DATA
-        const leadRegex = /\|\|LEAD_DATA:\s*(\{.*?\})\s*\|\|/;
+        const leadRegex = /\|\|LEAD_DATA:\s*(\{[\s\S]*?\})\s*\|\|/;
         const match = replyText.match(leadRegex);
         
         if (match) {
