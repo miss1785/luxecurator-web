@@ -42,7 +42,37 @@ export default function ChatBot() {
       const data = await res.json();
       
       if (res.ok && data.content) {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
+        let replyText = data.content;
+        
+        // KIỂM TRA BẮT SÓNG LEAD_DATA
+        const leadRegex = /\|\|LEAD_DATA:\s*(\{.*?\})\s*\|\|/;
+        const match = replyText.match(leadRegex);
+        
+        if (match) {
+          try {
+            const leadData = JSON.parse(match[1]);
+            replyText = replyText.replace(leadRegex, '').trim();
+            
+            fetch('https://script.google.com/macros/s/AKfycbz54nf21E3iVve_scPmzeO328Z1dASNQ0R2_-bMHZu-sZER_y9obO-E_g2NIlg32HDd/exec', {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: leadData.name,
+                phone: leadData.phone,
+                email: leadData.email,
+                interest: leadData.interest,
+                intent_level: leadData.intent_level,
+                sessionId: "ID_KH_123",
+                history: [...messages, userMsg].map(m => m.role + ": " + m.content).join('\n')
+              })
+            });
+          } catch(e) {
+            console.error("Lỗi móc dữ liệu AI: ", e);
+          }
+        }
+        
+        setMessages(prev => [...prev, { role: 'assistant', content: replyText }]);
       } else {
         setMessages(prev => [...prev, { role: 'assistant', content: data.error || 'Xin lỗi, kết nối đang bị lỗi.' }]);
       }
