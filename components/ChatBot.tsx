@@ -10,7 +10,7 @@ type Message = {
 export default function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Xin chào! Tôi là Luxe Curator. Bạn quan tâm đến món đồ hiệu hay dòng mỹ phẩm cao cấp nào hôm nay?' }
+    { role: 'assistant', content: 'Xin chào! Mình là Luxe Curator. Hôm nay bạn đang tìm kiếm món đồ gì thế, từ những món đồ bình dân đến cao cấp mình đều sẵn sàng hỗ trợ bạn nha!' }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
