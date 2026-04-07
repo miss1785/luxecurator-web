@@ -42,45 +42,68 @@ export default function ChatBot() {
         body: JSON.stringify({ messages: [...messages, userMsg] })
       });
 
-      const data = await res.json();
-      
-      if (res.ok && data.content) {
-        let replyText = data.content;
-        const leadRegex = /\|\|LEAD_DATA:\s*(\{[\s\S]*?\})\s*\|\|/;
-        const match = replyText.match(leadRegex);
-        
-        if (match) {
-          try {
-            const leadData = JSON.parse(match[1]);
-            replyText = replyText.replace(leadRegex, '').trim();
-            setDebugStatus('Sending...');
-            
-            const params = new URLSearchParams();
-            params.append('name', leadData.name || '');
-            params.append('phone', leadData.phone || '');
-            params.append('email', leadData.email || '');
-            params.append('summary', leadData.summary || '');
-            params.append('product_examples', leadData.product_examples || '');
-            params.append('intent_level', leadData.intent_level || '');
-            params.append('sessionId', sessionId);
-            params.append('history', [...messages, userMsg, { role: 'assistant', content: replyText }].map(m => m.role + ": " + m.content).join('\n'));
+      if (!res.ok) throw new Error('API Error');
 
-            fetch('https://script.google.com/macros/s/AKfycbwOGabHahSRVXK0zSqgYe_FRjGcw2vHQWn9LUEk1yjG2kiNLHOSzV6HMhOtdWTbvqMA/exec', {
-              method: 'POST',
-              mode: 'no-cors',
-              body: params
-            }).then(() => {
-              setDebugStatus('Live');
-            }).catch(e => {
-              setDebugStatus('Error Sheet');
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error('No reader');
+
+      const decoder = new TextDecoder();
+      let assistantReply = '';
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        // Vercel AI SDK gửi format: 0:"chữ"
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('0:')) {
+            const text = JSON.parse(line.slice(2));
+            assistantReply += text;
+            setMessages(prev => {
+              const newMsgs = [...prev];
+              newMsgs[newMsgs.length - 1].content = assistantReply;
+              return newMsgs;
             });
-
-          } catch(e) { /* silent fail for lead data parsing */ }
-        } else {
-          setDebugStatus('Live');
+          }
         }
-        
-        setMessages(prev => [...prev, { role: 'assistant', content: replyText }]);
+      }
+
+      // Xử lý Lead sau khi stream xong
+      setDebugStatus('Live');
+      const leadRegex = /\|\|LEAD_DATA:\s*(\{[\s\S]*?\})\s*\|\|/;
+      const match = assistantReply.match(leadRegex);
+      
+      if (match) {
+        try {
+          const leadData = JSON.parse(match[1]);
+          const cleanReply = assistantReply.replace(leadRegex, '').trim();
+          
+          // Cập nhật lại tin nhắn sạch
+          setMessages(prev => {
+            const newMsgs = [...prev];
+            newMsgs[newMsgs.length - 1].content = cleanReply;
+            return newMsgs;
+          });
+
+          const params = new URLSearchParams();
+          params.append('name', leadData.name || '');
+          params.append('phone', leadData.phone || '');
+          params.append('email', leadData.email || '');
+          params.append('summary', leadData.summary || '');
+          params.append('product_examples', leadData.product_examples || '');
+          params.append('intent_level', leadData.intent_level || '');
+          params.append('sessionId', sessionId);
+          params.append('history', [...messages, userMsg, { role: 'assistant', content: cleanReply }].map(m => m.role + ": " + m.content).join('\n'));
+
+          fetch('https://script.google.com/macros/s/AKfycbwOGabHahSRVXK0zSqgYe_FRjGcw2vHQWn9LUEk1yjG2kiNLHOSzV6HMhOtdWTbvqMA/exec', {
+            method: 'POST',
+            mode: 'no-cors',
+            body: params
+          });
+        } catch(e) {}
       }
     } catch (error) {
       setDebugStatus('Error AI');

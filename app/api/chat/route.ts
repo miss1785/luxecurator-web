@@ -1,14 +1,9 @@
-import { OpenAI } from 'openai';
-import { NextResponse } from 'next/server';
+import { openai } from '@ai-sdk/openai';
+import { streamText } from 'ai';
 
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
-
-    // Khởi tạo bên trong hàm để tránh lỗi build khi chưa có API Key trên Vercel
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY || 'dummy_key',
-    });
 
     const chatbotData = `
 Tên chuyên gia: Luxe Curator
@@ -30,22 +25,19 @@ YÊU CẦU KỸ THUẬT LEAD:
 BẮT BUỘC xuất ||LEAD_DATA:{"name": "...", "phone": "...", "email": "...", "summary": "...", "product_examples": "...", "intent_level": "1-5"}|| khi có Tên hoặc SĐT.
 `;
 
-    const chatCompletion = await openai.chat.completions.create({
+    const result = await streamText({
+      model: openai('gpt-4o'),
       messages: [
-        { role: "system", content: chatbotData },
+        { role: 'system', content: chatbotData },
         ...messages,
-        { role: "system", content: "HÃY NHỚ: Viết tin nhắn một cách tự nhiên thành một đoạn duy nhất, tránh ngắt dòng dư thừa. Luôn hỏi tên khách hàng trước." }
+        { role: 'system', content: "HÃY NHỚ: Viết tin nhắn một cách tự nhiên thành một đoạn văn ngắn gọn (< 2 câu), thân thiện. Luôn hỏi tên khách hàng trước." }
       ],
-      model: "gpt-4o",
       temperature: 0.2,
     });
 
-    return NextResponse.json({
-      content: chatCompletion.choices[0].message.content || ""
-    });
-
+    return result.toDataStreamResponse();
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return new Response(JSON.stringify({ error: errorMessage }), { status: 500 });
   }
 }
