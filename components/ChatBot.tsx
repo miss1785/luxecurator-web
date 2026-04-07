@@ -15,6 +15,7 @@ export default function ChatBot() {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [sessionId, setSessionId] = useState('');
+  const [debugStatus, setDebugStatus] = useState<string>(''); // Dòng trạng thái gỡ lỗi
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export default function ChatBot() {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
+    setDebugStatus('Đang gửi tin nhắn...');
 
     try {
       const res = await fetch('/api/chat', {
@@ -51,6 +53,7 @@ export default function ChatBot() {
           try {
             const leadData = JSON.parse(match[1]);
             replyText = replyText.replace(leadRegex, '').trim();
+            setDebugStatus('Đã bắt được thông tin! Đang lưu về Sheet...');
             
             const params = new URLSearchParams();
             params.append('name', leadData.name || '');
@@ -66,16 +69,26 @@ export default function ChatBot() {
               method: 'POST',
               mode: 'no-cors',
               body: params
-            }).then(() => console.log("Lead captured!"))
-              .catch(e => console.error("Lead error:", e));
+            }).then(() => {
+              setDebugStatus('Đã gửi về Sheet (vui lòng kiểm tra Sheet)');
+            }).catch(e => {
+              setDebugStatus('Lỗi gửi Sheet! Kiểm tra mạng.');
+              console.error(e);
+            });
 
-          } catch(e) { console.error("JSON parse error:", e); }
+          } catch(e) { 
+            setDebugStatus('Lỗi phân tích dữ liệu AI!');
+            console.error(e); 
+          }
+        } else {
+          setDebugStatus('AI chưa xuất mã Lead (chưa đủ thông tin)');
         }
         
         setMessages(prev => [...prev, { role: 'assistant', content: replyText }]);
       }
     } catch (error) {
-      console.error("Chat error:", error);
+      setDebugStatus('Lỗi kết nối AI!');
+      console.error(error);
     } finally {
       setIsTyping(false);
     }
@@ -90,7 +103,15 @@ export default function ChatBot() {
       ) : (
         <div className="w-[340px] sm:w-[380px] bg-zinc-950 border border-yellow-600/30 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[520px]">
           <div className="px-4 py-3 bg-zinc-900 border-b border-zinc-800 flex justify-between items-center text-zinc-100">
-            <div className="flex items-center gap-3"><div className="w-8 h-8 bg-yellow-600/20 rounded-full flex items-center justify-center border border-yellow-600/50"><span className="text-yellow-600 font-bold text-sm">LC</span></div><h3 className="font-semibold text-sm">Luxe Assistant</h3></div>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-yellow-600/20 rounded-full flex items-center justify-center border border-yellow-600/50">
+                <span className="text-yellow-600 font-bold text-sm">LC</span>
+              </div>
+              <div>
+                <h3 className="font-semibold text-xs sm:text-sm">Luxe Assistant</h3>
+                <p className="text-[10px] text-yellow-600/70">{debugStatus || 'Sẵn sàng'}</p>
+              </div>
+            </div>
             <button onClick={() => setIsOpen(false)}><svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
           </div>
           <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 bg-zinc-950">
@@ -99,13 +120,15 @@ export default function ChatBot() {
                 {msg.content}
               </div>
             ))}
-            {isTyping && <div className="text-zinc-500 text-xs italic px-2">Đang phản hồi...</div>}
+            {isTyping && <div className="text-zinc-500 text-xs italic px-2">Đang trả lời...</div>}
             <div ref={messagesEndRef} />
           </div>
-          <div className="p-3 bg-zinc-900">
-            <div className="flex gap-2 bg-zinc-950 rounded-full p-1 pl-4 border border-zinc-800 focus-within:border-yellow-600/50">
+          <div className="p-3 bg-zinc-900 border-t border-zinc-800">
+            <div className="flex gap-2 bg-zinc-950 rounded-full p-1 pl-4 border border-zinc-800 focus-within:border-yellow-600/50 transition-all">
               <input type="text" className="flex-1 bg-transparent text-zinc-200 text-sm outline-none py-2" placeholder="Nhập tin nhắn..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} />
-              <button onClick={handleSend} className="w-8 h-8 rounded-full bg-yellow-600 text-zinc-950 hover:bg-yellow-500"><svg className="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg></button>
+              <button onClick={handleSend} className="w-8 h-8 rounded-full bg-yellow-600 text-zinc-950 hover:bg-yellow-500 transition-colors flex items-center justify-center">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+              </button>
             </div>
           </div>
         </div>
