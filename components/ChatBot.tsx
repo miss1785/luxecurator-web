@@ -59,22 +59,30 @@ export default function ChatBot() {
         if (done) break;
 
         const chunk = decoder.decode(value);
-        // Vercel AI SDK gửi format: 0:"chữ"
         const lines = chunk.split('\n');
+        
         for (const line of lines) {
-          if (line.startsWith('0:')) {
-            const text = JSON.parse(line.slice(2));
-            assistantReply += text;
-            setMessages(prev => {
-              const newMsgs = [...prev];
-              newMsgs[newMsgs.length - 1].content = assistantReply;
-              return newMsgs;
-            });
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6).trim();
+            if (dataStr === '[DONE]') break;
+            
+            try {
+              const data = JSON.parse(dataStr);
+              if (data.content) {
+                assistantReply += data.content;
+                setMessages(prev => {
+                  const newMsgs = [...prev];
+                  newMsgs[newMsgs.length - 1].content = assistantReply;
+                  return newMsgs;
+                });
+              }
+            } catch (e) {
+              // Ignore partial JSON
+            }
           }
         }
       }
 
-      // Xử lý Lead sau khi stream xong
       setDebugStatus('Live');
       const leadRegex = /\|\|LEAD_DATA:\s*(\{[\s\S]*?\})\s*\|\|/;
       const match = assistantReply.match(leadRegex);
@@ -84,7 +92,6 @@ export default function ChatBot() {
           const leadData = JSON.parse(match[1]);
           const cleanReply = assistantReply.replace(leadRegex, '').trim();
           
-          // Cập nhật lại tin nhắn sạch
           setMessages(prev => {
             const newMsgs = [...prev];
             newMsgs[newMsgs.length - 1].content = cleanReply;
