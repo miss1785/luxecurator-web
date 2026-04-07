@@ -42,7 +42,10 @@ export default function ChatBot() {
         body: JSON.stringify({ messages: [...messages, userMsg] })
       });
 
-      if (!res.ok) throw new Error('API Error');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'API Error');
+      }
 
       const reader = res.body?.getReader();
       if (!reader) throw new Error('No reader');
@@ -105,8 +108,8 @@ export default function ChatBot() {
           });
         } catch(e) {}
       }
-    } catch (error) {
-      setDebugStatus('Error AI');
+    } catch (error: any) {
+      setDebugStatus(error.message || 'Error AI');
     } finally {
       setIsTyping(false);
     }
