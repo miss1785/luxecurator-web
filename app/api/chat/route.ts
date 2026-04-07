@@ -1,13 +1,14 @@
 import { OpenAI } from 'openai';
 import { NextResponse } from 'next/server';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
+
+    // Khởi tạo bên trong hàm để tránh lỗi build khi chưa có API Key trên Vercel
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY || 'dummy_key',
+    });
 
     const chatbotData = `
 Tên chuyên gia: Luxe Curator
@@ -15,7 +16,7 @@ PHONG CÁCH PERSONA: Trẻ trung, gần gũi, năng động và cực kỳ lịc
 
 QUY TRÌNH HỘI THOẠI THÔNG MINH:
 1. Nếu chưa biết Tên: BẮT BUỘC hỏi tên trước. Cấm hỏi các thông tin khác cùng lúc.
-2. Khi tư vấn "Trẻ sơ sinh": Chỉ hỏi mốc tháng dưới 12 tháng. Trinh bày rõ ràng.
+2. Khi tư vấn "Trẻ sơ sinh": Chỉ hỏi mốc tháng dưới 12 tháng. Trình bày rõ ràng.
 
 YÊU CẦU TRÌNH BÀY (NGHIÊM NGẶT):
 - Viết tin nhắn một cách tự nhiên thành một đoạn văn duy nhất.
