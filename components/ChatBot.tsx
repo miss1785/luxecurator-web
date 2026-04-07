@@ -10,12 +10,12 @@ type Message = {
 export default function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Xin chào! Mình là Luxe Curator. Hôm nay bạn đang tìm kiếm món đồ gì thế?' }
+    { role: 'assistant', content: 'Xin chào! Mình là Luxe Curator.\n\nHôm nay bạn đang tìm kiếm món đồ gì thế?' }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [sessionId, setSessionId] = useState('');
-  const [debugStatus, setDebugStatus] = useState<string>(''); // Dòng trạng thái gỡ lỗi
+  const [debugStatus, setDebugStatus] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function ChatBot() {
           try {
             const leadData = JSON.parse(match[1]);
             replyText = replyText.replace(leadRegex, '').trim();
-            setDebugStatus('Đã bắt được thông tin! Đang lưu về Sheet...');
+            setDebugStatus('Đã bắt được thông tin! Đang gửi về Sheet...');
             
             const params = new URLSearchParams();
             params.append('name', leadData.name || '');
@@ -72,23 +72,22 @@ export default function ChatBot() {
             }).then(() => {
               setDebugStatus('Đã gửi về Sheet (vui lòng kiểm tra Sheet)');
             }).catch(e => {
-              setDebugStatus('Lỗi gửi Sheet! Kiểm tra mạng.');
+              setDebugStatus('Lỗi gửi Sheet!');
               console.error(e);
             });
 
           } catch(e) { 
-            setDebugStatus('Lỗi phân tích dữ liệu AI!');
+            setDebugStatus('Lỗi xử lý dữ liệu AI!');
             console.error(e); 
           }
         } else {
-          setDebugStatus('AI chưa xuất mã Lead (chưa đủ thông tin)');
+          setDebugStatus('Chưa có mã Lead (Tiếp tục hội thoại)');
         }
         
         setMessages(prev => [...prev, { role: 'assistant', content: replyText }]);
       }
     } catch (error) {
       setDebugStatus('Lỗi kết nối AI!');
-      console.error(error);
     } finally {
       setIsTyping(false);
     }
@@ -116,11 +115,11 @@ export default function ChatBot() {
           </div>
           <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 bg-zinc-950">
             {messages.map((msg, idx) => (
-              <div key={idx} className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role === 'user' ? 'bg-yellow-600 text-zinc-950 self-end font-medium' : 'bg-zinc-800 text-zinc-200 self-start'}`}>
+              <div key={idx} className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${msg.role === 'user' ? 'bg-yellow-600 text-zinc-950 self-end font-medium' : 'bg-zinc-800 text-zinc-200 self-start shadow-sm'}`}>
                 {msg.content}
               </div>
             ))}
-            {isTyping && <div className="text-zinc-500 text-xs italic px-2">Đang trả lời...</div>}
+            {isTyping && <div className="text-zinc-500 text-xs italic px-2">Luxe Curator đang gõ...</div>}
             <div ref={messagesEndRef} />
           </div>
           <div className="p-3 bg-zinc-900 border-t border-zinc-800">
