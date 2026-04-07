@@ -108,8 +108,9 @@ export default function ChatBot() {
           });
         } catch(e) {}
       }
-    } catch (error: any) {
-      setDebugStatus(error.message || 'Error AI');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Error AI';
+      setDebugStatus(msg);
     } finally {
       setIsTyping(false);
     }
