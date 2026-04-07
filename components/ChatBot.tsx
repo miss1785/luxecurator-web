@@ -10,7 +10,7 @@ type Message = {
 export default function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Xin chào! Mình là Luxe Curator.\nHôm nay bạn đang tìm kiếm món đồ gì thế?' }
+    { role: 'assistant', content: 'Xin chào! Mình là Luxe Curator. Hôm nay bạn đang tìm kiếm món đồ gì thế?' }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -33,7 +33,7 @@ export default function ChatBot() {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
-    setDebugStatus('Đang xử lý...');
+    setDebugStatus('...');
 
     try {
       const res = await fetch('/api/chat', {
@@ -53,7 +53,7 @@ export default function ChatBot() {
           try {
             const leadData = JSON.parse(match[1]);
             replyText = replyText.replace(leadRegex, '').trim();
-            setDebugStatus('Đã bắt lead! Đang gửi về Sheet...');
+            setDebugStatus('Sending...');
             
             const params = new URLSearchParams();
             params.append('name', leadData.name || '');
@@ -70,21 +70,20 @@ export default function ChatBot() {
               mode: 'no-cors',
               body: params
             }).then(() => {
-              setDebugStatus('Đã đồng bộ Google Sheets!');
+              setDebugStatus('Live');
             }).catch(e => {
-              setDebugStatus('Lỗi đồng bộ Sheet!');
-              console.error(e);
+              setDebugStatus('Error Sheet');
             });
 
-          } catch(e) { console.error("JSON error:", e); }
+          } catch(e) { console.error(e); }
         } else {
-          setDebugStatus('Sẵn sàng');
+          setDebugStatus('Live');
         }
         
         setMessages(prev => [...prev, { role: 'assistant', content: replyText }]);
       }
     } catch (error) {
-      setDebugStatus('Lỗi kết nối AI!');
+      setDebugStatus('Error AI');
     } finally {
       setIsTyping(false);
     }
@@ -112,7 +111,7 @@ export default function ChatBot() {
           </div>
           <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 bg-zinc-950">
             {messages.map((msg, idx) => (
-              <div key={idx} className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${msg.role === 'user' ? 'bg-yellow-600 text-zinc-950 self-end font-medium' : 'bg-zinc-800 text-zinc-200 self-start shadow-sm'}`}>
+              <div key={idx} className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-snug whitespace-pre-wrap ${msg.role === 'user' ? 'bg-yellow-600 text-zinc-950 self-end font-medium' : 'bg-zinc-800 text-zinc-200 self-start shadow-sm'}`}>
                 {msg.content}
               </div>
             ))}

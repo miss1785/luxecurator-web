@@ -3,7 +3,6 @@ import { streamText } from 'ai';
 import fs from 'fs';
 import path from 'path';
 
-// Cho phép Vercel Edge Runtime chạy nhanh hơn
 export const runtime = 'edge';
 
 export async function POST(req: Request) {
@@ -14,7 +13,7 @@ export async function POST(req: Request) {
     const filePath = path.join(process.cwd(), 'chatbot_data.txt');
     chatbotData = fs.readFileSync(filePath, 'utf8');
   } catch (e) {
-    chatbotData = "Bạn là chuyên gia Luxe Curator chuyên tư vấn hàng Authentic Châu Âu. Hãy hỏi tên khách trước.";
+    chatbotData = "Bạn là Luxe Curator. Hãy hỏi tên khách trước.";
   }
 
   const result = await streamText({
@@ -22,9 +21,9 @@ export async function POST(req: Request) {
     messages: [
       { role: 'system', content: chatbotData },
       ...messages,
-      { role: 'system', content: "HÃY NHỚ: Trình bày gọn gàng. Chỉ xuống 1 dòng giữa các ý. Không để khoảng trống quá thưa." }
+      { role: 'system', content: "HÃY NHỚ: Viết tin nhắn một cách tự nhiên thành một đoạn duy nhất, tránh ngắt dòng dư thừa. Luôn hỏi tên khách hàng trước." }
     ],
-    temperature: 0.1,
+    temperature: 0.2,
   });
 
   return result.toDataStreamResponse();
