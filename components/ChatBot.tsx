@@ -10,7 +10,7 @@ type Message = {
 export default function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Xin chào! Mình là Luxe Curator.\n\nHôm nay bạn đang tìm kiếm món đồ gì thế?' }
+    { role: 'assistant', content: 'Xin chào! Mình là Luxe Curator.\nHôm nay bạn đang tìm kiếm món đồ gì thế?' }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -33,7 +33,7 @@ export default function ChatBot() {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
-    setDebugStatus('Đang gửi tin nhắn...');
+    setDebugStatus('Đang xử lý...');
 
     try {
       const res = await fetch('/api/chat', {
@@ -53,7 +53,7 @@ export default function ChatBot() {
           try {
             const leadData = JSON.parse(match[1]);
             replyText = replyText.replace(leadRegex, '').trim();
-            setDebugStatus('Đã bắt được thông tin! Đang gửi về Sheet...');
+            setDebugStatus('Đã bắt lead! Đang gửi về Sheet...');
             
             const params = new URLSearchParams();
             params.append('name', leadData.name || '');
@@ -65,23 +65,20 @@ export default function ChatBot() {
             params.append('sessionId', sessionId);
             params.append('history', [...messages, userMsg, { role: 'assistant', content: replyText }].map(m => m.role + ": " + m.content).join('\n'));
 
-            fetch('https://script.google.com/macros/s/AKfycbWT48SYhMyV0wQEWD8Zoia9tGj_-uPi5CXmYiBOEDBk3GEV7vUFP9ZHOFCA5Hz_aWd/exec', {
+            fetch('https://script.google.com/macros/s/AKfycbwOGabHahSRVXK0zSqgYe_FRjGcw2vHQWn9LUEk1yjG2kiNLHOSzV6HMhOtdWTbvqMA/exec', {
               method: 'POST',
               mode: 'no-cors',
               body: params
             }).then(() => {
-              setDebugStatus('Đã gửi về Sheet (vui lòng kiểm tra Sheet)');
+              setDebugStatus('Đã đồng bộ Google Sheets!');
             }).catch(e => {
-              setDebugStatus('Lỗi gửi Sheet!');
+              setDebugStatus('Lỗi đồng bộ Sheet!');
               console.error(e);
             });
 
-          } catch(e) { 
-            setDebugStatus('Lỗi xử lý dữ liệu AI!');
-            console.error(e); 
-          }
+          } catch(e) { console.error("JSON error:", e); }
         } else {
-          setDebugStatus('Chưa có mã Lead (Tiếp tục hội thoại)');
+          setDebugStatus('Sẵn sàng');
         }
         
         setMessages(prev => [...prev, { role: 'assistant', content: replyText }]);
@@ -108,7 +105,7 @@ export default function ChatBot() {
               </div>
               <div>
                 <h3 className="font-semibold text-xs sm:text-sm">Luxe Assistant</h3>
-                <p className="text-[10px] text-yellow-600/70">{debugStatus || 'Sẵn sàng'}</p>
+                <p className="text-[10px] text-yellow-600/70">{debugStatus}</p>
               </div>
             </div>
             <button onClick={() => setIsOpen(false)}><svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>

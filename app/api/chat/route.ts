@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     messages: [
       { role: 'system', content: chatbotData },
       ...messages,
-      { role: 'system', content: "HÃY NHỚ: Luôn xuống dòng và dùng ít nhất 1 dòng trống giữa các đoạn văn hoặc gạch đầu dòng (-). Trình bày cực kỳ thoáng đãng, dễ đọc." }
+      { role: 'system', content: "HÃY NHỚ: Trình bày gọn gàng. Chỉ xuống 1 dòng giữa các ý. Không để khoảng trống quá thưa." }
     ],
     temperature: 0.1,
   });
