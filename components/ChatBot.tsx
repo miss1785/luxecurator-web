@@ -18,7 +18,6 @@ export default function ChatBot() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Tạo ID phiên chat ngẫu nhiên
     setSessionId('LC-' + Math.random().toString(36).substr(2, 6).toUpperCase());
   }, []);
 
@@ -46,7 +45,7 @@ export default function ChatBot() {
       if (res.ok && data.content) {
         let replyText = data.content;
         
-        // Trích xuất LEAD_DATA ẩn nếu có
+        // Regex để bắt khối lead data ẩn
         const leadRegex = /\|\|LEAD_DATA:\s*(\{[\s\S]*?\})\s*\|\|/;
         const match = replyText.match(leadRegex);
         
@@ -55,24 +54,32 @@ export default function ChatBot() {
             const leadData = JSON.parse(match[1]);
             replyText = replyText.replace(leadRegex, '').trim();
             
-            // Gửi dữ liệu về Google Sheets
+            console.log("Đã phát hiện Lead Data, chuẩn bị gửi về Sheet:", leadData);
+
+            // Gửi dữ liệu về Google Sheets bằng phương thức "Simple POST" để tránh lỗi CORS
             fetch('https://script.google.com/macros/s/AKfycby3cfWFGs4B99IS3yNhNqCh1tUFEZpKIEdr98HMM5wQwDTvGtOWshiWu7gW8gXbHLtCfw/exec', {
               method: 'POST',
-              mode: 'no-cors',
+              mode: 'no-cors', // Rất quan trọng để tránh lỗi CORS
+              headers: { 'Content-Type': 'text/plain' }, // Dùng text/plain để vượt qua pre-flight check
               body: JSON.stringify({
                 ...leadData,
                 sessionId,
-                history: [...messages, userMsg].map(m => m.role + ": " + m.content).join('\n')
+                history: [...messages, userMsg, { role: 'assistant', content: replyText }].map(m => m.role + ": " + m.content).join('\n')
               })
-            });
-          } catch(e) { console.error("Error parsing lead:", e); }
+            }).then(() => console.log("Đã gửi dữ liệu sang Google Script thành công (chế độ no-cors)."))
+              .catch(err => console.error("Lỗi gửi dữ liệu về Sheet:", err));
+
+          } catch(e) { 
+            console.error("Lỗi khi xử lý JSON Lead Data:", e); 
+          }
         }
         
         setMessages(prev => [...prev, { role: 'assistant', content: replyText }]);
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: 'Hệ thống đang bận, bạn thử lại sau nhen!' }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: 'AI đang bận một chút, bạn đợi xíu nhen!' }]);
       }
     } catch (error) {
+      console.error("Lỗi API Chat:", error);
       setMessages(prev => [...prev, { role: 'assistant', content: 'Lỗi kết nối rồi bạn ơi!' }]);
     } finally {
       setIsTyping(false);
@@ -84,7 +91,7 @@ export default function ChatBot() {
       {!isOpen ? (
         <button
           onClick={() => setIsOpen(true)}
-          className="w-14 h-14 bg-yellow-600 text-zinc-950 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-all"
+          className="w-14 h-14 bg-yellow-600 text-zinc-950 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-all animate-bounce"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -92,7 +99,6 @@ export default function ChatBot() {
         </button>
       ) : (
         <div className="w-[340px] sm:w-[380px] bg-zinc-950 border border-yellow-600/30 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[520px]">
-          {/* Header */}
           <div className="px-4 py-3 bg-zinc-900 border-b border-zinc-800 flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-yellow-600/20 rounded-full flex items-center justify-center border border-yellow-600/50">
@@ -107,24 +113,22 @@ export default function ChatBot() {
             </button>
           </div>
 
-          {/* Messages */}
           <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 bg-zinc-950">
             {messages.map((msg, idx) => (
-              <div key={idx} className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
+              <div key={idx} className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                 msg.role === 'user' 
-                  ? 'bg-yellow-600 text-zinc-950 self-end' 
-                  : 'bg-zinc-800 text-zinc-200 self-start'
+                  ? 'bg-yellow-600 text-zinc-950 self-end font-medium' 
+                  : 'bg-zinc-800 text-zinc-200 self-start shadow-sm'
               }`}>
                 {msg.content}
               </div>
             ))}
-            {isTyping && <div className="text-zinc-500 text-xs italic">Đang trả lời...</div>}
+            {isTyping && <div className="text-zinc-500 text-xs italic px-2 animate-pulse">Đang phản hồi...</div>}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
           <div className="p-3 bg-zinc-900">
-            <div className="flex gap-2 bg-zinc-950 rounded-full p-1 pl-4 border border-zinc-800">
+            <div className="flex gap-2 bg-zinc-950 rounded-full p-1 pl-4 border border-zinc-800 focus-within:border-yellow-600/50 transition-all">
               <input
                 type="text"
                 className="flex-1 bg-transparent text-zinc-200 text-sm outline-none py-2"
@@ -133,7 +137,7 @@ export default function ChatBot() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               />
-              <button onClick={handleSend} className="w-8 h-8 rounded-full bg-yellow-600 text-zinc-950">
+              <button onClick={handleSend} className="w-8 h-8 rounded-full bg-yellow-600 text-zinc-950 hover:bg-yellow-500 transition-colors">
                 <svg className="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
