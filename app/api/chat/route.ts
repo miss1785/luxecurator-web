@@ -3,8 +3,6 @@ import { streamText } from 'ai';
 import fs from 'fs';
 import path from 'path';
 
-export const runtime = 'edge';
-
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
