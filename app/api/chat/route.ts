@@ -34,14 +34,15 @@ export async function POST(req: Request) {
       ...messages.map((msg: any) => ({
         role: msg.role === 'user' ? 'user' : 'assistant',
         content: msg.content
-      }))
+      })),
+      { role: "system", content: "NHẮC LẠI QUY TẮC TỐI THƯỢNG: Nếu khách chưa nói Tên, bạn KHÔNG ĐƯỢC tư vấn sản phẩm. Bạn trả lời DUY NHẤT câu: 'Luxe Curator hỗ trợ bạn nhé! Trước hết bạn cho mình hỏi tên bạn là gì để tiện xưng hô ạ?'" }
     ];
 
     // Gọi lên 9router API
     const response = await openai.chat.completions.create({
       model: "ces-chatbot-gpt-5.4",
       messages: apiMessages,
-      temperature: 0.6,
+      temperature: 0.1,
       max_tokens: 600,
     });
 
