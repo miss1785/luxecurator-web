@@ -104,8 +104,7 @@ export default function ChatBot() {
           params.append('name', leadData.name || '');
           params.append('phone', leadData.phone || '');
           params.append('email', leadData.email || '');
-          params.append('summary', leadData.summary || '');
-          params.append('product_examples', leadData.product_examples || '');
+          params.append('interest', leadData.interest || '');
           params.append('intent_level', leadData.intent_level || '');
           params.append('sessionId', sessionId);
           params.append('history', [...messages, userMsg, { role: 'assistant', content: cleanReply }].map(m => m.role + ": " + m.content).join('\n'));
