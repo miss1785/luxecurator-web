@@ -52,14 +52,16 @@ export default function ChatBot() {
 
       const decoder = new TextDecoder();
       let assistantReply = '';
+      let buffer = '';
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || ''; // Giữ lại mảnh chưa hoàn chỉnh cuối cùng
         
         for (const line of lines) {
           if (line.startsWith('data: ')) {
@@ -77,7 +79,7 @@ export default function ChatBot() {
                 });
               }
             } catch (e) {
-              // Ignore partial JSON
+              // JSON chưa hoàn chỉnh sẽ được xử lý ở chunk sau
             }
           }
         }

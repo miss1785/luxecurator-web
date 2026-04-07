@@ -4,8 +4,10 @@ export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
 
+    // Cấu hình theo đúng hướng dẫn của thầy trong Bài 2
     const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY || '',
+      baseURL: "https://9router.vuhai.io.vn/v1",
+      apiKey: "sk-4bd27113b7dc78d1-lh6j1d-f4f9c69f", // API Key từ ảnh hướng dẫn
     });
 
     const chatbotData = `
@@ -26,7 +28,7 @@ BẮT BUỘC xuất ||LEAD_DATA:{"name": "...", "phone": "...", "email": "...", 
 `;
 
     const stream = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'ces-chatbot-gpt-5.4', // Model từ ảnh hướng dẫn
       messages: [
         { role: 'system', content: chatbotData },
         ...messages,
