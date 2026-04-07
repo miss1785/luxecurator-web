@@ -75,7 +75,7 @@ export default function ChatBot() {
               setDebugStatus('Error Sheet');
             });
 
-          } catch(e) { console.error(e); }
+          } catch(e) { /* silent fail for lead data parsing */ }
         } else {
           setDebugStatus('Live');
         }

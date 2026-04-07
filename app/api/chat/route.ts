@@ -1,11 +1,15 @@
-import { openai } from '@ai-sdk/openai';
-import { streamText } from 'ai';
+import { OpenAI } from 'openai';
+import { NextResponse } from 'next/server';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  try {
+    const { messages } = await req.json();
 
-  // Nhúng trực tiếp kịch bản để tránh lỗi đọc file trên Vercel
-  const chatbotData = `
+    const chatbotData = `
 Tên chuyên gia: Luxe Curator
 PHONG CÁCH PERSONA: Trẻ trung, gần gũi, năng động và cực kỳ lịch sự.
 
@@ -25,15 +29,22 @@ YÊU CẦU KỸ THUẬT LEAD:
 BẮT BUỘC xuất ||LEAD_DATA:{"name": "...", "phone": "...", "email": "...", "summary": "...", "product_examples": "...", "intent_level": "1-5"}|| khi có Tên hoặc SĐT.
 `;
 
-  const result = await streamText({
-    model: openai('ces-chatbot-gpt-5.4'),
-    messages: [
-      { role: 'system', content: chatbotData },
-      ...messages,
-      { role: 'system', content: "HÃY NHỚ: Viết tin nhắn một cách tự nhiên thành một đoạn văn ngắn gọn (< 2 câu), thân thiện. Luôn hỏi tên khách hàng trước." }
-    ],
-    temperature: 0.2,
-  });
+    const chatCompletion = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: chatbotData },
+        ...messages,
+        { role: "system", content: "HÃY NHỚ: Viết tin nhắn một cách tự nhiên thành một đoạn duy nhất, tránh ngắt dòng dư thừa. Luôn hỏi tên khách hàng trước." }
+      ],
+      model: "gpt-4o",
+      temperature: 0.2,
+    });
 
-  return result.toDataStreamResponse();
+    return NextResponse.json({
+      content: chatCompletion.choices[0].message.content || ""
+    });
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
+  }
 }
